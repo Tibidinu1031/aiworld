@@ -1,0 +1,19 @@
+{
+  "name": "neura-island",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Neura Island - a 3D game where kids learn how AI and machine learning work, with Bip the friendly robot.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "vite": "^7.1.0",
+    "vite-plugin-singlefile": "^2.3.0"
+  }
+}
