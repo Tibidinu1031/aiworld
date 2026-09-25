@@ -334,6 +334,7 @@ export function openMap(game) {
       dot(g, x, y, hover === meta.id && ok ? 22 : 18, ok ? meta.color : '#9aa3bf');
       ctext(g, ok ? String(meta.num) : '🔒', x, y + 1, { size: ok ? 20 : 15, color: '#fff' });
       if (passed) dot(g, x + 15, y - 15, 9, '#1fbfa2', '#1d2340', 2);
+      if (state.field && state.field[meta.id]) ctext(g, '⭐', x - 16, y - 15, { size: 15 });
       if (passed) ctext(g, '✓', x + 15, y - 14, { size: 12, color: '#fff' });
     });
     // Player.

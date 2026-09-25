@@ -14,13 +14,15 @@ export function createHud(root, handlers) {
   const coreBars = h('div', { class: 'cores-row' });
   const coreCount = h('span');
   const crystalCount = h('span');
+  const starCount = h('span');
   const counters = h(
     'div',
     { class: 'counters' },
     h('div', { class: 'counter', title: '' }, coreBars, coreCount),
     h('div', { class: 'counter' }, h('span', { class: 'ci' }, h('svg', null)), crystalCount),
+    h('div', { class: 'counter' }, h('span', { class: 'ci' }, '⭐'), starCount),
   );
-  counters.lastChild.querySelector('.ci').innerHTML =
+  counters.children[1].querySelector('.ci').innerHTML =
     '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2 L20 12 L12 22 L4 12 Z" fill="#7ff6ff" stroke="#1d2340" stroke-width="2"/></svg>';
 
   const mapBtn = h('button', { class: 'btn interactive', title: t('ctrlMap'), 'aria-label': t('ctrlMap') }, '🗺️');
@@ -103,6 +105,10 @@ export function createHud(root, handlers) {
       });
       coreCount.textContent = passedFlags.filter(Boolean).length + '/13';
       crystalCount.textContent = crystals + '/' + total;
+    },
+    setStars(n, total) {
+      starCount.textContent = n + '/' + total;
+      starCount.parentElement.title = t('stars');
     },
     setPrompt(label, touchMode) {
       if (!label) {

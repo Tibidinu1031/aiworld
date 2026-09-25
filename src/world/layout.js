@@ -57,11 +57,40 @@ export const lossValley = (() => {
   const s = stationIslands[4];
   const cx = s.x + s.radial.x * 6.2;
   const cz = s.z + s.radial.z * 6.2;
-  const side = { x: cx + s.tangent.x * 3.4, z: cz + s.tangent.z * 3.4 };
+  // The side dip sits high on the bowl where the slope is gentle, and is deep enough
+  // to hold a ball: a true local minimum.
+  const side = { x: cx + s.tangent.x * 4.5, z: cz + s.tangent.z * 4.5 };
   s.features.push({ x: cx, z: cz, r: 5.6, h: -1.85 });
-  s.features.push({ x: side.x, z: side.z, r: 1.6, h: -0.28 });
+  s.features.push({ x: side.x, z: side.z, r: 1.3, h: -0.75 });
   return { x: cx, z: cz, r: 5.6, side };
 })();
+
+// Island challenges sit on the free side of each island, around this anchor
+// (rad = outward, tan = along the path toward the next island).
+export const CH_ANCHOR = { rad: 2.6, tan: 6.6 };
+// a = along the tangent, b = outward, both relative to the anchor.
+export function chPoint(isl, a, b) {
+  return {
+    x: isl.x + isl.radial.x * (CH_ANCHOR.rad + b) + isl.tangent.x * (CH_ANCHOR.tan + a),
+    z: isl.z + isl.radial.z * (CH_ANCHOR.rad + b) + isl.tangent.z * (CH_ANCHOR.tan + a),
+  };
+}
+// Shallow dips (sorting circles, pressure plates, scale pans) so balls settle inside them.
+export const CH_DIPS = {
+  1: [[-1.9, 1.0, 1.3], [1.9, 1.0, 1.3]],
+  2: [[0, 2.2, 1.1]],
+  5: [[-2.2, 0.6, 1.0], [0, 1.2, 1.0], [2.2, 0.6, 1.0]],
+  6: [[-1.6, -0.6, 1.0], [1.6, -0.6, 1.0]],
+  9: [[-2.4, 1.2, 1.25], [2.4, 1.2, 1.25], [0, -1.6, 1.25]],
+  12: [[-2.2, 0.5, 1.15], [2.2, 0.5, 1.15]],
+};
+for (const [idx, dips] of Object.entries(CH_DIPS)) {
+  const isl = stationIslands[idx];
+  for (const [a, b, r] of dips) {
+    const p = chPoint(isl, a, b);
+    isl.features.push({ x: p.x, z: p.z, r: r + 0.35, h: -0.24 });
+  }
+}
 
 function featureOffset(isl, x, z) {
   let o = 0;

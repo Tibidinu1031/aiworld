@@ -51,7 +51,7 @@ export class Player {
     let dx = fx * ax.y + rx * ax.x;
     let dz = fz * ax.y + rz * ax.x;
     const mag = Math.hypot(dx, dz);
-    const running = input.down('ShiftLeft') || input.down('ShiftRight');
+    const running = input.down('ShiftLeft') || input.down('ShiftRight') || input.joyRun;
     let speed = (running ? RUN : WALK) * Math.min(1, mag);
     if (this.inWater) speed *= 0.45;
     if (mag > 0.001) {

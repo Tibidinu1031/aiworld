@@ -8,6 +8,7 @@ import { pagesFor, expsFor, requiredExps, learnDone, expsDone, testUnlocked } fr
 import { renderVisual } from './visuals.js';
 import { face } from './avatars.js';
 import { makeApi } from '../experiments/kit.js';
+import { CHALLENGES } from '../content/challenges.js';
 import { pickQuestions, runQuiz, passMark } from './quiz.js';
 import { sfx, speak, stopSpeaking, canSpeak } from '../audio.js';
 
@@ -205,6 +206,21 @@ export function openStationPanel(game, stationId, startTab) {
         render();
       });
       grid.appendChild(c);
+    }
+    // The island challenge lives outside in the 3D world; this card points to it.
+    const ch = CHALLENGES[stationId];
+    if (ch) {
+      const solved = !!(state.field && state.field[stationId]);
+      grid.appendChild(
+        h(
+          'div',
+          { class: 'exp-card static' },
+          h('div', { class: 'ico' }, '⭐'),
+          h('h4', null, t('islandChallenge') + ': ' + L(ch.title)),
+          h('p', null, L(ch.desc) + ' ' + t('challengeWhere')),
+          h('div', { class: 'row' }, h('span', { class: 'chip opt' }, '🏝️ ' + t('onIsland')), solved ? h('span', { class: 'chip done' }, '✓ ' + t('done')) : null),
+        ),
+      );
     }
     body.appendChild(grid);
     if (expsDone(stationId) && !prog.passed) {

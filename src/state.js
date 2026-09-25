@@ -17,6 +17,7 @@ function defaults() {
     introDone: false,
     progress: {}, // stationId -> { seen:[], exps:[], passed, best, attempts, visited }
     crystals: [],
+    field: {}, // island challenges solved: stationId -> true
     finalPassed: false,
     finalBest: 0,
     finishedAt: null,

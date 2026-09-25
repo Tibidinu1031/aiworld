@@ -64,22 +64,26 @@ export class Input {
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
-  // Touch controls: a joystick on the left, camera drag on the right.
+  // Touch controls: a floating joystick on the left half, camera drag on the right half,
+  // two fingers on the right half pinch to zoom, and big buttons for jump / use / kick / map.
   attachTouch(root, handlers) {
     this.touchMode = true;
     const stick = root.querySelector('.joy');
     const knob = root.querySelector('.joy-knob');
     let joyId = null;
-    let camId = null;
     let cx = 0;
     let cy = 0;
-    let lx = 0;
-    let ly = 0;
+    const cams = new Map(); // touch id -> {x, y}
+    let pinchDist = 0;
     const R = 55;
+    const resetStick = () => {
+      stick.style.left = '';
+      stick.style.top = '';
+      knob.style.transform = '';
+      stick.classList.remove('on');
+    };
     const onStart = (e) => {
       for (const t of e.changedTouches) {
-        const target = t.target;
-        if (target.closest && target.closest('button, .panel, .hud-top, .dialog')) continue;
         if (t.clientX < window.innerWidth * 0.45 && joyId === null) {
           joyId = t.identifier;
           cx = t.clientX;
@@ -87,14 +91,21 @@ export class Input {
           stick.style.left = cx - 70 + 'px';
           stick.style.top = cy - 70 + 'px';
           stick.classList.add('on');
-        } else if (camId === null) {
-          camId = t.identifier;
-          lx = t.clientX;
-          ly = t.clientY;
+          this.joy.active = true;
+          this.joy.x = 0;
+          this.joy.y = 0;
+        } else if (cams.size < 2) {
+          cams.set(t.identifier, { x: t.clientX, y: t.clientY });
+          if (cams.size === 2) {
+            const [a, b] = [...cams.values()];
+            pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+          }
         }
       }
+      e.preventDefault();
     };
     const onMove = (e) => {
+      let handled = false;
       for (const t of e.changedTouches) {
         if (t.identifier === joyId) {
           let dx = t.clientX - cx;
@@ -107,16 +118,26 @@ export class Input {
           knob.style.transform = `translate(${dx}px, ${dy}px)`;
           this.joy.x = dx / R;
           this.joy.y = -dy / R;
-          this.joy.active = true;
-        } else if (t.identifier === camId) {
-          this.lookX += (t.clientX - lx) * 1.3;
-          this.lookY += (t.clientY - ly) * 1.3;
-          lx = t.clientX;
-          ly = t.clientY;
-          this.lastLookTime = performance.now() / 1000;
+          handled = true;
+        } else if (cams.has(t.identifier)) {
+          const c = cams.get(t.identifier);
+          if (cams.size === 1) {
+            this.lookX += (t.clientX - c.x) * 1.4;
+            this.lookY += (t.clientY - c.y) * 1.4;
+            this.lastLookTime = performance.now() / 1000;
+          }
+          c.x = t.clientX;
+          c.y = t.clientY;
+          handled = true;
         }
       }
-      if (joyId !== null || camId !== null) e.preventDefault();
+      if (cams.size === 2) {
+        const [a, b] = [...cams.values()];
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        this.zoom += (pinchDist - d) * 0.03;
+        pinchDist = d;
+      }
+      if (handled) e.preventDefault();
     };
     const onEnd = (e) => {
       for (const t of e.changedTouches) {
@@ -125,29 +146,53 @@ export class Input {
           this.joy.x = 0;
           this.joy.y = 0;
           this.joy.active = false;
-          knob.style.transform = '';
-          stick.classList.remove('on');
-        } else if (t.identifier === camId) camId = null;
+          resetStick();
+        } else cams.delete(t.identifier);
       }
     };
-    this.canvas.addEventListener('touchstart', onStart, { passive: true });
+    this.canvas.addEventListener('touchstart', onStart, { passive: false });
     window.addEventListener('touchmove', onMove, { passive: false });
     window.addEventListener('touchend', onEnd);
     window.addEventListener('touchcancel', onEnd);
+    // Buttons use pointer events, so they work with fingers, pens and mice alike.
     for (const [sel, code] of [['.tb-jump', 'Space'], ['.tb-use', 'KeyE'], ['.tb-kick', 'KeyF']]) {
       const b = root.querySelector(sel);
       if (!b) continue;
-      b.addEventListener('touchstart', (e) => {
+      const release = () => {
+        this.keys.delete(code);
+        b.classList.remove('pressed');
+      };
+      b.addEventListener('pointerdown', (e) => {
         e.preventDefault();
+        try {
+          b.setPointerCapture(e.pointerId);
+        } catch {
+          /* ignore */
+        }
         this.pressedSet.add(code);
         this.keys.add(code);
+        b.classList.add('pressed');
       });
-      b.addEventListener('touchend', (e) => {
+      b.addEventListener('pointerup', release);
+      b.addEventListener('pointercancel', release);
+      b.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+    const mapBtn = root.querySelector('.tb-map');
+    if (mapBtn && handlers && handlers.map) {
+      mapBtn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
-        this.keys.delete(code);
+        mapBtn.classList.add('pressed');
+      });
+      mapBtn.addEventListener('pointerup', () => {
+        mapBtn.classList.remove('pressed');
+        handlers.map();
       });
     }
-    if (handlers && handlers.map) root.querySelector('.tb-map')?.addEventListener('click', handlers.map);
+  }
+
+  // Pushing the joystick all the way makes Bip run.
+  get joyRun() {
+    return this.joy.active && Math.hypot(this.joy.x, this.joy.y) > 0.92;
   }
 
   down(code) {

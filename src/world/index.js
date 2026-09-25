@@ -3,11 +3,12 @@ import { createEnvironment } from './env.js';
 import { buildTerrain, buildDecorations } from './terrain.js';
 import { buildBridges } from './bridges.js';
 import { buildStationProps } from './props.js';
+import { buildChallenge } from './challenges.js';
 import { createParticles, createBeacon } from './fx.js';
 import { createRobot } from './robot.js';
 import { makeBoard } from './labels.js';
 import { makeBall } from './balls.js';
-import { stationIslands, hub, local, terrainHeight, TOP, islandAt, rng } from './layout.js';
+import { stationIslands, hub, local, terrainHeight, TOP, islandAt, rng, chPoint } from './layout.js';
 import { STATION_META } from '../content/meta.js';
 import { L, t } from '../i18n.js';
 import { state, sp } from '../state.js';
@@ -30,6 +31,9 @@ export function buildWorld(scene, physics, hooks) {
     scene,
     physics,
     particles,
+    reserve,
+    challengeDone: (id) => hooks.challengeDone(id),
+    challengeInfo: (id, after) => hooks.challengeInfo(id, after),
     interact(o) {
       interactables.push({ y: terrainHeight(o.x, o.z), r: 2.5, enabled: () => true, ...o });
     },
@@ -206,6 +210,10 @@ export function buildWorld(scene, physics, hooks) {
     // Themed landmark.
     reserve(local(isl, 7, 0).x, local(isl, 7, 0).z, 6.5);
     cullables.push({ obj: buildStationProps(isl, ctx), x: isl.x, z: isl.z });
+    // Island challenge (a physical puzzle), on the free side of the island.
+    const ca = chPoint(isl, 0, 0);
+    reserve(ca.x, ca.z, 4.6);
+    cullables.push({ obj: buildChallenge(isl, ctx), x: isl.x, z: isl.z });
   }
 
   // --- Hub: Core Tower, final kiosk, physics playground, signs ---

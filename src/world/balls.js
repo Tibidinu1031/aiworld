@@ -4,11 +4,11 @@ import { Ball } from '../engine/physics.js';
 // Real ball types with realistic sizes and masses.
 // density = mass / volume decides whether a ball floats (less than 1000 kg/m^3) or sinks.
 export const BALL_TYPES = {
-  beach: { r: 0.25, mass: 0.2, restitution: 0.75, inertia: 2 / 3, rollResist: 0.03, name: { en: 'Beach ball', ro: 'Minge de plajă' } },
-  soccer: { r: 0.11, mass: 0.43, restitution: 0.7, inertia: 2 / 3, rollResist: 0.02, name: { en: 'Soccer ball', ro: 'Minge de fotbal' } },
-  basket: { r: 0.12, mass: 0.62, restitution: 0.8, inertia: 2 / 3, rollResist: 0.02, name: { en: 'Basketball', ro: 'Minge de baschet' } },
-  bowling: { r: 0.109, mass: 6.5, restitution: 0.2, inertia: 2 / 5, rollResist: 0.01, name: { en: 'Bowling ball', ro: 'Bilă de bowling' } },
-  rubber: { r: 0.25, mass: 0.6, restitution: 0.72, inertia: 2 / 3, rollResist: 0.015, name: { en: 'Rubber ball', ro: 'Minge de cauciuc' } },
+  beach: { r: 0.25, mass: 0.2, restitution: 0.75, inertia: 2 / 3, rollResist: 0.07, name: { en: 'Beach ball', ro: 'Minge de plajă' } },
+  soccer: { r: 0.11, mass: 0.43, restitution: 0.7, inertia: 2 / 3, rollResist: 0.05, name: { en: 'Soccer ball', ro: 'Minge de fotbal' } },
+  basket: { r: 0.12, mass: 0.62, restitution: 0.8, inertia: 2 / 3, rollResist: 0.05, name: { en: 'Basketball', ro: 'Minge de baschet' } },
+  bowling: { r: 0.109, mass: 6.5, restitution: 0.2, inertia: 2 / 5, rollResist: 0.03, name: { en: 'Bowling ball', ro: 'Bilă de bowling' } },
+  rubber: { r: 0.25, mass: 0.6, restitution: 0.72, inertia: 2 / 3, rollResist: 0.05, name: { en: 'Rubber ball', ro: 'Minge de cauciuc' } },
   cannon: { r: 0.18, mass: 1.5, restitution: 0.5, inertia: 2 / 5, rollResist: 0.02, name: { en: 'Launcher ball', ro: 'Minge de lansator' } },
   big: { r: 0.4, mass: 1.2, restitution: 0.65, inertia: 2 / 3, rollResist: 0.02, name: { en: 'Big ball', ro: 'Minge mare' } },
 };
@@ -73,7 +73,12 @@ function ballTexture(kind, color) {
 
 const geoCache = {};
 export function makeBall(physics, scene, type, x, y, z, color = '#ff6b3d') {
-  const spec = BALL_TYPES[type];
+  return makeBallSpec(physics, scene, { ...BALL_TYPES[type], type }, x, y, z, color);
+}
+
+// A ball with any size and mass (spec: r, mass, restitution, inertia, rollResist, type).
+export function makeBallSpec(physics, scene, spec, x, y, z, color = '#ff6b3d') {
+  const type = spec.type || 'plain';
   const geo = (geoCache[spec.r] ||= new THREE.SphereGeometry(spec.r, 20, 14));
   let mat;
   if (type === 'bowling') mat = new THREE.MeshStandardMaterial({ color: color || '#2b2f6b', roughness: 0.15, metalness: 0.2 });
@@ -82,8 +87,13 @@ export function makeBall(physics, scene, type, x, y, z, color = '#ff6b3d') {
   mesh.castShadow = true;
   mesh.position.set(x, y, z);
   scene.add(mesh);
-  const ball = new Ball({ ...spec, x, y, z, mesh });
+  const ball = new Ball({ rollResist: 0.06, inertia: 2 / 3, restitution: 0.6, ...spec, x, y, z, mesh });
   ball.type = type;
   physics.addBall(ball);
   return ball;
+}
+
+export function removeBall(physics, scene, ball) {
+  physics.removeBall(ball);
+  scene.remove(ball.mesh);
 }

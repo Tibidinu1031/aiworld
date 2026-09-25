@@ -15,6 +15,7 @@ import { openStationPanel } from './ui/station.js';
 import { STATION_META, metaById } from './content/meta.js';
 import { FACTS } from './content/facts.js';
 import { adaTalk, INTRO, stationPassedLines, finalLines } from './content/story.js';
+import { CHALLENGES } from './content/challenges.js';
 
 // Find out what draws the 3D. Without a real graphics driver, browsers fall back
 // to software rendering (e.g. "Microsoft Basic Render Driver"), which is very slow.
@@ -62,6 +63,8 @@ export class Game {
       talkAda: (isl) => this.talkToAda(isl),
       openMap: () => this.openMapPanel(),
       readSign: (s) => this.openPanel(() => openSign(this, s)),
+      challengeDone: (id) => this.onChallengeDone(id),
+      challengeInfo: (id, after) => this.challengeInfo(id, after),
     });
     this.robot = createRobot();
     this.scene.add(this.robot.group);
@@ -103,6 +106,8 @@ export class Game {
       this.input.attachTouch(this.hud.touch, { map: () => this.mode === 'play' && this.openMapPanel() });
     }
     this.touch = isTouch;
+    // Phones and tablets have very dense screens; start at a sensible resolution and shadow size.
+    if (isTouch) this.world.env.sun.shadow.mapSize.set(1024, 1024);
 
     window.addEventListener('resize', () => this.resize());
     this.watchContext();
@@ -139,7 +144,8 @@ export class Game {
   applyQuality() {
     const high = state.quality !== 'low';
     const dpr = window.devicePixelRatio || 1;
-    this.basePixelRatio = high ? Math.min(dpr, 1.75) : this.gpu.software ? 0.5 : Math.min(1, dpr * 0.75);
+    const cap = this.touch ? 1.3 : 1.75;
+    this.basePixelRatio = high ? Math.min(dpr, cap) : this.gpu.software ? 0.5 : Math.min(1, dpr * 0.75);
     this.renderer.setPixelRatio(this.basePixelRatio * this.pixelScale);
     if (this.renderer.shadowMap.enabled !== high) {
       this.renderer.shadowMap.enabled = high;
@@ -274,6 +280,7 @@ export class Game {
     unlockAudio();
     this.hud.show(true);
     if (this.gpu.software && !state.qualityChosen) this.hud.toast('🐢 ' + t('gpuSlow'), null, 10000);
+    if (this.touch && window.innerHeight > window.innerWidth) this.hud.toast('📱 ' + t('rotateHint'), null, 7000);
     this.updateGoal();
     if (res.fresh || !state.introDone) {
       this.placePlayer();
@@ -368,6 +375,28 @@ export class Game {
     this.robot.setHappy(2.5);
   }
 
+  // ---------- island challenges ----------
+  async challengeInfo(id, after) {
+    if (this.mode !== 'play') return;
+    await this.dialog(CHALLENGES[id].intro);
+    this.mode = 'play';
+    if (after) after();
+  }
+
+  onChallengeDone(id) {
+    state.field = state.field || {};
+    if (state.field[id]) return;
+    state.field[id] = true;
+    save();
+    sfx('win');
+    this.robot.setHappy(4);
+    const p = this.player.pos;
+    this.world.particles.emit({ x: p.x, y: p.y + 1.5, z: p.z, count: 90, colors: ['#ffd23f', '#ff6b3d', '#43b05c', '#2a9df4', '#ffffff'], up: 6, spread: 3, size: 0.25 });
+    this.hud.toast('⭐ ' + t('challengeDoneToast'), L(CHALLENGES[id].title), 5000);
+    this.updateGoal();
+    if (this.mode === 'play') setTimeout(() => this.mode === 'play' && this.dialog([{ who: 'ada', text: CHALLENGES[id].outro }]), 700);
+  }
+
   async onStationPassed(id) {
     const meta = metaById(id);
     this.world.buildBridgeFor(id);
@@ -458,6 +487,7 @@ export class Game {
     const w = this.world;
     const passed = STATION_META.map((m) => sp(m.id).passed);
     this.hud.setCounts(passed, state.crystals.length, w.crystals.total);
+    this.hud.setStars(Object.keys(state.field || {}).length, STATION_META.length);
     if (!state.introDone) {
       this.goalText = t('goalIntro');
       this.hud.setGoal(t('goal'), t('goalIntro'), '!', '#7b5cff');

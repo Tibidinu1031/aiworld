@@ -49,10 +49,10 @@ The game checks what is drawing the 3D. On computers without a proper graphics d
 
 | Action | Keyboard / mouse | Touch |
 | --- | --- | --- |
-| Move | W A S D or arrow keys | left side joystick |
-| Look around | drag with the mouse, wheel to zoom | drag on the right side |
+| Move | W A S D or arrow keys | joystick: touch anywhere on the left half |
+| Look around | drag with the mouse, wheel to zoom | drag on the right half, pinch with two fingers to zoom |
 | Jump | Space | ⤒ button |
-| Run | Shift | |
+| Run | Shift | push the joystick all the way |
 | Talk / use terminals, signs, pads | E (or click the prompt) | E button |
 | Kick a ball | F | ⚽ button |
 | Teleport map | M | 🗺️ button |
@@ -91,6 +91,26 @@ The test at each station unlocks only after the player has read every lesson pag
 
 Also on the island: 30 Data Crystals to collect, each with a fun fact (science, AI history, and Romanian computing pioneers like Grigore Moisil and CIFA-1), plus info signs next to every landmark.
 
+## Island challenges
+
+Besides the experiments in each station's window, every island has a **physical challenge** in the 3D world, solved by moving Bip, pushing and kicking balls, standing on pressure plates and walking patterns. Look for the ⭐ flag and press E to hear the rules (this also puts the pieces back). They are bonus content: the test doesn't depend on them. Solved challenges are counted by the ⭐ counter at the top of the screen and marked on the map.
+
+| # | Challenge | What you do | The idea |
+| --- | --- | --- | --- |
+| 1 | Tag the machines | Tag 5 objects on pedestals as "learns from data" or "follows rules" | Rules vs learning |
+| 2 | Label the fruit | Push apples and oranges into the right circles (a green apple is still an apple) | Labels and datasets |
+| 3 | Odd one out | Three rounds: find the ball with a different color, size, then weight (push them to feel it) | Features |
+| 4 | Be the mystery point | Walk on the grid; your 3 nearest pillars vote red or blue | k-nearest neighbors, decision boundary |
+| 5 | Two valleys | Get one ball to rest at the bottom of the Loss Valley and one in the side dip | Global vs local minimum |
+| 6 | Wake the neuron | Stand on pressure plates and push balls onto them until the weighted sum passes 0 | Weights and bias |
+| 7 | The XOR puzzle | Two plates feed a network with a hidden layer; find when its lamp lights | Why hidden layers matter |
+| 8 | Pixel floor | Walk over tiles to switch pixels on and off and copy a picture | Images are numbers |
+| 9 | Trust the pattern | Jump along stepping stones over the sea; three of them are invisible | Generalization |
+| 10 | Group them yourself | Push unlabeled balls into unnamed circles so similar ones end up together | Clustering |
+| 11 | You are the agent | Adjust a launcher's power with buttons and learn from the reward | Reinforcement learning |
+| 12 | Walk a sentence | Step on word pads; brighter pads are likelier next words | Next-word prediction |
+| 13 | Balance the data | Push balls onto the empty pan until the scale balances | Fair, balanced data |
+
 ## Real physics
 
 The world follows real physics, and signs around the hub explain it:
@@ -113,7 +133,7 @@ src/state.js            save data (localStorage)
 src/i18n.js             interface strings (EN / RO)
 src/audio.js            synthesized sound effects and read-aloud (Web Speech)
 src/engine/             physics, player controller, input
-src/world/              islands, terrain, water, sky, bridges, station props, Bip and Ada
+src/world/              islands, terrain, water, sky, bridges, station props, island challenges, Bip and Ada
 src/ui/                 HUD, dialogs, station window, quiz, menus, lesson visuals
 src/content/            lessons and quizzes for each station (s1.js ... s13.js), story, fun facts
 src/experiments/        the 21 interactive experiments, plus a tiny neural network (mlp.js)

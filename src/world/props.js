@@ -244,7 +244,7 @@ function s3({ ctx, P, faceIn, group }) {
 }
 
 // ---------- Station 4: nearest neighbors on a floor grid ----------
-function s4({ ctx, P, faceIn, group }) {
+function s4({ isl, ctx, P, faceIn, group }) {
   const c = P(6.8, 0);
   const g = new THREE.Group();
   g.position.set(c.x, c.y, c.z);
@@ -313,6 +313,19 @@ function s4({ ctx, P, faceIn, group }) {
   }
   group.add(shadow(g));
   ctx.physics.addBox(c.x, c.z, 4, 4, -faceIn, c.y - 1, c.y + 0.2, { walkable: true });
+  // Share the pillars' world positions with this island's challenge.
+  g.updateMatrixWorld(true);
+  isl.knn = {
+    floorY: c.y + 0.2,
+    center: { x: c.x, z: c.z },
+    rot: faceIn,
+    half: 4,
+    pts: pts.map(([x, z, k]) => {
+      const h = 0.6 + (((x * 7 + z * 3) % 1) + 1) % 1 * 0.8;
+      const w = new THREE.Vector3(x, 0.2 + h, z).applyMatrix4(g.matrixWorld);
+      return { x: w.x, y: w.y, z: w.z, c: k };
+    }),
+  };
   ctx.onUpdate((dt, time) => {
     gold.rotation.y += dt;
     gold.position.y = 1.6 + Math.sin(time * 2) * 0.1;
