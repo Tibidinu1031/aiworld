@@ -95,6 +95,7 @@ export const pixelPainter = {
     });
     cb.canvas.addEventListener('pointermove', paintAt);
     cb.canvas.addEventListener('pointerup', () => (painting = false));
+    cb.canvas.addEventListener('pointercancel', () => (painting = false));
     cb.canvas.addEventListener('pointerleave', () => {
       hover = null;
       draw();
@@ -152,7 +153,18 @@ export const pixelPainter = {
       grayBox.hidden = color;
       modeBtn.classList.toggle('sun', color);
       brush = color ? [255, 0, 0] : [0, 0, 0];
+      colorBrushes.set('255,0,0');
+      rgb.forEach((sl, k) => sl.set(brush[k]));
+      grayBrushes.set(0);
       if (color) say.set(T({ en: 'In color, each pixel has 3 numbers: Red, Green, Blue. Mix them!', ro: 'În color, fiecare pixel are 3 numere: roșu, verde, albastru. Amestecă-le!' }));
+      else if (px.some((p) => p[0] !== p[1] || p[1] !== p[2])) {
+        // Back to black and white: each pixel's 3 numbers become one brightness number.
+        px = px.map((p) => {
+          const v = Math.round(0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]);
+          return [v, v, v];
+        });
+        say.set(T({ en: "Back to black and white: each pixel's 3 color numbers became 1 brightness number. Green counts the most, because our eyes are most sensitive to green!", ro: 'Înapoi la alb-negru: cele 3 numere de culoare ale fiecărui pixel au devenit 1 număr pentru luminozitate. Verdele contează cel mai mult, pentru că ochii noștri sunt cei mai sensibili la verde!' }));
+      }
       draw();
     });
     if (api.level < 2) invBtn.hidden = true;

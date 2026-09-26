@@ -124,6 +124,7 @@ export const teachShapes = {
       drawing = false;
       if (mode === 'test' && hasInk) guess();
     });
+    cb.canvas.addEventListener('pointercancel', () => (drawing = false));
 
     const thumb = (vec) => {
       const c = document.createElement('canvas');
@@ -430,6 +431,7 @@ export const filterLab = {
         img = makeImage(v);
         compute();
         draw();
+        if (sel) explain(sel.x, sel.y);
       },
     );
     const kSeg = seg(
@@ -441,7 +443,7 @@ export const filterLab = {
           kernel = KERNELS[v].k.slice();
           usedFilters.add(v);
           if (usedFilters.size >= 4) missions.check('all4');
-        }
+        } else kernel = customInputs.map((c) => parseFloat(c.value.replace(',', '.')) || 0);
         customBox.hidden = v !== 'custom';
         renderKernel();
         compute();

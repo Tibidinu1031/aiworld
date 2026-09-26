@@ -25,6 +25,7 @@ export function openStationPanel(game, stationId, startTab) {
   let openExp = null;
   let cleanup = null;
   let quizActive = false;
+  let pendingPass = false; // passed for the first time; celebrate when the window closes
 
   const overlay = h('div', { class: 'overlay' });
   const panel = h('div', { class: 'panel', role: 'dialog', 'aria-modal': 'true' });
@@ -65,6 +66,11 @@ export function openStationPanel(game, stationId, startTab) {
     overlay.remove();
     sfx('close');
     game.closePanel();
+    // However the window is closed (button, X or Esc), a first pass builds the next bridge.
+    if (pendingPass) {
+      pendingPass = false;
+      game.onStationPassed(stationId);
+    }
   }
 
   function renderTabs() {
@@ -323,9 +329,10 @@ export function openStationPanel(game, stationId, startTab) {
     clear(body);
     const passed = score >= need;
     prog.attempts++;
-    const firstPass = passed && !prog.passed;
+    if (passed && !prog.passed) pendingPass = true;
     if (passed) {
-      if (score > prog.best || !prog.passed) {
+      // Keep the best result as a fraction, since test sizes differ between levels.
+      if (!prog.passed || score / total > prog.best / (prog.bestOf || total)) {
         prog.best = score;
         prog.bestOf = total;
       }
@@ -346,10 +353,7 @@ export function openStationPanel(game, stationId, startTab) {
     const row = h('div', { class: 'row-btns', style: { justifyContent: 'center' } });
     if (passed) {
       const b = h('button', { class: 'btn primary big' }, '🏝️ ' + t('backToIsland'));
-      b.addEventListener('click', () => {
-        close();
-        if (firstPass) game.onStationPassed(stationId);
-      });
+      b.addEventListener('click', () => close());
       row.appendChild(b);
       sfx('fanfare');
       const burst = h('div', { class: 'core-burst' }, h('div', { class: 'gem', style: { background: meta.color } }));

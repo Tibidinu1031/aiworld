@@ -34,13 +34,17 @@ function makeData() {
 }
 
 // Leave-one-out nearest-neighbor accuracy: how well an AI could separate the fruit.
-function separation(data, fx, fy) {
+// With `only`, just those kinds are scored (their neighbors can still be any fruit).
+function separation(data, fx, fy, only) {
   const sx = FEATS.find((f) => f.id === fx);
   const sy = FEATS.find((f) => f.id === fy);
   const nx = (v) => (v - sx.min) / (sx.max - sx.min);
   const ny = (v) => (v - sy.min) / (sy.max - sy.min);
   let right = 0;
+  let n = 0;
   for (const a of data) {
+    if (only && !only.includes(a.k)) continue;
+    n++;
     let best = null;
     let bd = Infinity;
     for (const b of data) {
@@ -53,7 +57,7 @@ function separation(data, fx, fy) {
     }
     if (best.k === a.k) right++;
   }
-  return Math.round((right / data.length) * 100);
+  return Math.round((right / n) * 100);
 }
 
 export const featurePlot = {
@@ -75,7 +79,7 @@ export const featurePlot = {
       { id: 'good', t: { en: 'Find two features that separate apples and bananas with a score of 95% or more', ro: 'Găsește două trăsături care despart merele de banane cu un scor de 95% sau mai mult' } },
       { id: 'bad', t: { en: 'Find a useless pair: score below 70%', ro: 'Găsește o pereche inutilă: scor sub 70%' } },
       { id: 'three', t: { en: 'Turn on oranges 🍊 and separate all three fruits with 90% or more', ro: 'Pornește portocalele 🍊 și desparte toate cele trei fructe cu 90% sau mai mult' }, level: 2 },
-      { id: 'confuse', t: { en: 'With oranges on, find a pair where apples and oranges get mixed up (below 75%)', ro: 'Cu portocalele pornite, găsește o pereche în care merele și portocalele se amestecă (sub 75%)' }, level: 3 },
+      { id: 'confuse', t: { en: 'With oranges on, find two size or shape features that mix up apples and oranges', ro: 'Cu portocalele pornite, găsește două trăsături de mărime sau formă care amestecă merele cu portocalele' }, level: 3 },
     ]);
     const say = bubble('ada', '');
     const scoreEl = h('div', { class: 'bigstat' });
@@ -142,12 +146,16 @@ export const featurePlot = {
           say.set(T({ en: `Only ${s}%. The fruits are all mixed up: these features say nothing about the kind of fruit.`, ro: `Doar ${s}%. Fructele sunt amestecate: aceste trăsături nu spun nimic despre felul fructului.` }));
         } else say.set(T({ en: `${s}%. Not bad, but some fruits overlap. Can you find better features?`, ro: `${s}%. Nu e rău, dar unele fructe se suprapun. Poți găsi trăsături mai bune?` }));
       } else {
+        const useless = ['day', 'sticker'].includes(fx) || ['day', 'sticker'].includes(fy);
+        const appleOrange = separation(data, fx, fy, ['apple', 'orange']);
         if (s >= 90) {
           missions.check('three');
           say.set(T({ en: `${s}% with three fruits! Color helps tell apples from oranges.`, ro: `${s}% cu trei fructe! Culoarea ajută la deosebirea merelor de portocale.` }), 'happy');
-        } else if (s < 75) {
+        } else if (useless) {
+          say.set(T({ en: `${s}%. The day it was picked and the sticker number say nothing about the fruit, so the dots get mixed up.`, ro: `${s}%. Ziua culesului și numărul etichetei nu spun nimic despre fruct, așa că punctele se amestecă.` }));
+        } else if (appleOrange < 80) {
           missions.check('confuse');
-          say.set(T({ en: `${s}%. Apples and oranges are both round and similar in size, so these features mix them up. Features must fit the question!`, ro: `${s}%. Merele și portocalele sunt amândouă rotunde și de mărime asemănătoare, așa că aceste trăsături le amestecă. Trăsăturile trebuie să se potrivească întrebării!` }));
+          say.set(T({ en: `${s}%. The bananas are still easy, but apples and oranges are both round and about the same size and weight, so these features mix them up. Features must fit the question! Which feature IS different for apples and oranges?`, ro: `${s}%. Bananele sunt tot ușor de găsit, dar merele și portocalele sunt amândouă rotunde și cam de aceeași mărime și greutate, așa că aceste trăsături le amestecă. Trăsăturile trebuie să se potrivească întrebării! Ce trăsătură ESTE diferită la mere și portocale?` }));
         } else say.set(T({ en: `${s}%. Close! Which feature is different for apples and oranges?`, ro: `${s}%. Aproape! Ce trăsătură este diferită la mere și portocale?` }));
       }
     }

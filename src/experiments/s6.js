@@ -81,7 +81,7 @@ export const neuronLab = {
       emoji(g, fire ? '🌳' : '🏠', 545, ny - 10, 52);
       text(g, fire ? T({ en: 'PARK!', ro: 'PARC!' }) : T({ en: 'HOME', ro: 'ACASĂ' }), 545, ny + 40, { size: 18, color: fire ? C.mint : C.rose });
       if (api.level >= 3) {
-        const p = 1 / (1 + Math.exp(-sum * 1.5));
+        const p = 1 / (1 + Math.exp(-sum));
         text(g, T({ en: 'sigmoid: ', ro: 'sigmoidă: ' }) + Math.round(p * 100) + '%', 545, ny + 66, { size: 14, color: C.ink2 });
       }
     }
@@ -228,7 +228,7 @@ export const perceptronTrainer = {
         }
         if (rounds >= 2) missions.check('again');
         say.set(T({ en: '0 mistakes! The neuron found a line that separates the two groups.', ro: '0 greșeli! Neuronul a găsit o linie care desparte cele două grupuri.' }), 'happy');
-      } else if (xor && epochs >= 25) {
+      } else if (xor && epochs >= 12) {
         running = false;
         runBtn.textContent = '▶ ' + T({ en: 'Train until done', ro: 'Antrenează până la capăt' });
         missions.check('xor');

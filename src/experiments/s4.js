@@ -35,6 +35,7 @@ export const knnPlayground = {
     let dragging = false;
     const kTried = new Set([3]);
     const outliers = [];
+    let sawIsland = false; // saw the red island of an outlier on the map with k = 1
     let mapCache = null;
     const missions = api.missions([
       { id: 'blue', t: { en: 'Drag the star ⭐ until the AI says BLUE', ro: 'Mută steaua ⭐ până când IA spune ALBASTRU' } },
@@ -66,6 +67,7 @@ export const knnPlayground = {
     const mapBtn = btn('🗺️ ' + T({ en: 'Show map', ro: 'Arată harta' }), () => {
       mapOn = !mapOn;
       mapBtn.classList.toggle('sun', mapOn);
+      check();
       draw();
     }, 'small');
     if (api.level < 2) mapBtn.hidden = true;
@@ -152,7 +154,9 @@ export const knnPlayground = {
       if (knn(pts, star.x, star.y, 1).c !== knn(pts, star.x, star.y, 7).c) {
         if (missions.check('disagree')) say.set(T({ en: 'Here k = 1 and k = 7 disagree! Near the border, how many neighbors you ask really matters.', ro: 'Aici k = 1 și k = 7 nu sunt de acord! Lângă frontieră contează mult câți vecini întrebi.' }));
       }
-      if (mapOn && k >= 5 && outliers.some((o) => knn(pts, o.x, o.y, k).c === 1)) {
+      if (mapOn && k === 1 && outliers.some((o) => o.c === 0)) sawIsland = true;
+      // With k >= 3 the lonely red point (which counts itself) is outvoted by its blue neighbors.
+      if (sawIsland && mapOn && k >= 3 && outliers.some((o) => o.c === 0 && knn(pts, o.x, o.y, k).c === 1)) {
         if (missions.check('smooth')) say.set(T({ en: 'With a bigger k, the lonely red point gets outvoted by its blue neighbors. The map is smooth again!', ro: 'Cu un k mai mare, punctul roșu singuratic pierde la vot în fața vecinilor albaștri. Harta e din nou netedă!' }), 'happy');
       }
     }
@@ -191,7 +195,10 @@ export const knnPlayground = {
         if (before.c !== np.c && before.votes[np.c] === 0) {
           outliers.push(np);
           if (mapOn && np.c === 0) {
-            if (missions.check('outlier')) say.set(T({ en: 'See the little red island on the map? With k = 1, one odd point changes the answers all around it.', ro: 'Vezi insulița roșie de pe hartă? Cu k = 1, un singur punct ciudat schimbă răspunsurile din jurul lui.' }));
+            if (missions.check('outlier')) {
+              if (k === 1) say.set(T({ en: 'See the little red island on the map? With k = 1, one odd point changes the answers all around it.', ro: 'Vezi insulița roșie de pe hartă? Cu k = 1, un singur punct ciudat schimbă răspunsurile din jurul lui.' }));
+              else say.set(T({ en: `You added an outlier! With k = ${k} its blue neighbors outvote it. Now choose k = 1 and watch the map: a little red island appears around it.`, ro: `Ai adăugat o excepție! Cu k = ${k}, vecinii albaștri o înving la vot. Acum alege k = 1 și privește harta: apare o insuliță roșie în jurul ei.` }));
+            }
           }
         }
       }
@@ -207,6 +214,7 @@ export const knnPlayground = {
       draw();
     });
     cb.canvas.addEventListener('pointerup', () => (dragging = false));
+    cb.canvas.addEventListener('pointercancel', () => (dragging = false));
 
     layout(root, {
       intro: T({ en: 'Red and blue dots are known examples. The star is a new example. Its k nearest neighbors vote to decide its class.', ro: 'Punctele roșii și albastre sunt exemple cunoscute. Steaua e un exemplu nou. Cei mai apropiați k vecini votează ca să-i decidă clasa.' }),

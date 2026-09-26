@@ -175,6 +175,8 @@ export const kmeansLab = {
 
     const kSeg = seg([2, 3, 4, 5].map((v) => ({ v, label: 'k = ' + v })), k, (v) => {
       k = v;
+      placing = false;
+      manual = [];
       centers = [];
       assign = pts.map(() => -1);
       trails.length = 0;

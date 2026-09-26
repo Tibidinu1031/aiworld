@@ -138,6 +138,10 @@ code { font-family: ui-monospace, Consolas, monospace; background: var(--paper-2
 }
 .readout div { background: rgba(29,35,64,0.72); color: #fff; padding: 4px 10px; border-radius: 9px; }
 .readout b { font-weight: 600; color: var(--sun); }
+.readout .nitro-btn { font: inherit; background: rgba(29,35,64,0.72); color: #fff; padding: 2px 6px 2px 10px; border-radius: 9px; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.readout .nitro-btn kbd { background: rgba(255,255,255,0.2); border-radius: 5px; padding: 0 5px; margin-left: 4px; font-family: var(--display); font-weight: 600; }
+.readout .nitro-btn:hover { border-color: rgba(255,255,255,0.5); }
+.readout .nitro-btn.on { background: linear-gradient(180deg, #ffb13d, #ff6b3d); border-color: #fff; color: var(--ink); font-weight: 700; box-shadow: 0 0 14px rgba(255,140,40,0.8); }
 .keys {
   position: absolute; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   background: rgba(29,35,64,0.72); color: #fff; border-radius: 12px; padding: 8px 12px;
@@ -172,6 +176,8 @@ code { font-family: ui-monospace, Consolas, monospace; background: var(--paper-2
 .touch .joy, .touch .joy-knob { -webkit-tap-highlight-color: transparent; }
 .touch .tbtns .tb-jump { background: var(--sun); }
 .touch .tbtns .tb-use { background: var(--accent); color: #fff; }
+.touch .tbtns .tb-nitro { grid-column: 2; background: #d9deef; }
+.touch .tbtns .tb-nitro.on { background: linear-gradient(180deg, #ffb13d, #ff6b3d); box-shadow: 0 0 16px 3px rgba(255,140,40,0.85); }
 
 /* ---------- overlays & panels ---------- */
 .overlay {
@@ -424,7 +430,7 @@ select { font-family: var(--display); font-size: 16px; padding: 8px 10px; border
   .panel-head h2 { font-size: 20px; }
   .quiz .q { font-size: 22px; }
 }
-.touch-on .prompt { bottom: calc(196px + env(safe-area-inset-bottom, 0px)); }
+.touch-on .prompt { bottom: calc(280px + env(safe-area-inset-bottom, 0px)); }
 .touch-on .readout, .touch-on .keys { display: none; }
 @media (max-width: 560px) {
   .hud-left { max-width: calc(100vw - 172px) !important; }

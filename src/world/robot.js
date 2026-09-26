@@ -178,12 +178,47 @@ export function createRobot(opts = {}) {
     arms.push({ shoulder, sx });
   }
 
+  // Nitro boosters on the back. They fold out when nitro is on and their
+  // exhaust points backward, so the thrust pushes Bip forward.
+  const booster = new THREE.Group();
+  booster.position.set(0, 0.5, -0.33);
+  booster.rotation.x = 0.7;
+  booster.visible = false;
+  body.add(booster);
+  const flames = [];
+  if (!hologram) {
+    const flameMat = new THREE.MeshBasicMaterial({ color: '#ff9a2e', transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending });
+    const coreMat = new THREE.MeshBasicMaterial({ color: '#fff1b8', transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending });
+    const outerGeo = new THREE.ConeGeometry(0.065, 0.42, 12, 1, true);
+    const innerGeo = new THREE.ConeGeometry(0.035, 0.24, 10, 1, true);
+    for (const sx of [-1, 1]) {
+      const tank = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.22, 4, 12), orange);
+      tank.position.x = sx * 0.13;
+      booster.add(tank);
+      const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.09, 14), dark);
+      nozzle.position.set(sx * 0.13, -0.22, 0);
+      booster.add(nozzle);
+      const flame = new THREE.Group();
+      flame.position.set(sx * 0.13, -0.26, 0);
+      const outer = new THREE.Mesh(outerGeo, flameMat);
+      outer.rotation.x = Math.PI;
+      outer.position.y = -0.21;
+      const core = new THREE.Mesh(innerGeo, coreMat);
+      core.rotation.x = Math.PI;
+      core.position.y = -0.12;
+      flame.add(outer, core);
+      booster.add(flame);
+      flames.push(flame);
+    }
+  }
+
   root.traverse((o) => {
     if (o.isMesh && !hologram) {
       o.castShadow = true;
       o.receiveShadow = false;
     }
   });
+  for (const f of flames) f.traverse((o) => (o.castShadow = false));
 
   // --- animation state ---
   let t = Math.random() * 10;
@@ -201,6 +236,8 @@ export function createRobot(opts = {}) {
   let wheelAngle = 0;
   let talk = 0;
   let wave = 0;
+  let nitro = false;
+  let boost = 0; // 0 = boosters folded away, 1 = fully out
 
   function update(dt, s = {}) {
     t += dt;
@@ -233,10 +270,19 @@ export function createRobot(opts = {}) {
     headPivot.position.y = 0.98 + Math.sin(t * 2.2) * 0.012 + (s.onGround === false ? 0.02 : 0);
     headPivot.rotation.y = Math.sin(t * 0.6) * 0.08 + (s.lookYaw || 0);
     headPivot.rotation.z = Math.sin(t * 0.9) * 0.03;
-    // Arms swing with speed.
+    // Nitro boosters: pop out, and the flames grow with speed.
+    boost += ((nitro ? 1 : 0) - boost) * Math.min(1, dt * 12);
+    booster.visible = boost > 0.02;
+    if (booster.visible) {
+      booster.scale.setScalar(boost);
+      const len = (0.45 + Math.min(1, speed / 10) * 0.9) * (0.85 + Math.random() * 0.3);
+      for (const f of flames) f.scale.set(0.9 + Math.random() * 0.2, len, 0.9 + Math.random() * 0.2);
+    }
+    const streamline = nitro && speed > 4;
+    // Arms swing with speed (and sweep back when zooming on nitro).
     for (const a of arms) {
-      const swing = Math.sin(t * (4 + speed * 1.5)) * Math.min(0.6, speed * 0.12);
-      a.shoulder.rotation.x = a.sx * swing - lean * 0.8;
+      const swing = streamline ? 0 : Math.sin(t * (4 + speed * 1.5)) * Math.min(0.6, speed * 0.12);
+      a.shoulder.rotation.x = streamline ? 0.9 : a.sx * swing - lean * 0.8;
       let lift = s.onGround === false ? 1.2 : 0.25;
       if (wave > 0 && a.sx === 1) {
         a.shoulder.rotation.x = 0;
@@ -283,6 +329,9 @@ export function createRobot(opts = {}) {
     },
     wave(sec = 1.5) {
       wave = sec;
+    },
+    setNitro(on) {
+      nitro = !!on;
     },
     setChest(color) {
       chest.material.color.set(color);

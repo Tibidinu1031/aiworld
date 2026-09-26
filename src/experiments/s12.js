@@ -82,7 +82,7 @@ eu sunt fericit azi .
 robotul este fericit .
 noi suntem fericiți .
 pisica doarme .
-câinele aleargă în parc .
+câinele aleargă prin parc .
 robotul este prietenul meu .
 prietenul meu vrea să citească .`,
 };
@@ -194,13 +194,17 @@ export const nextWord = {
           h('span', { style: { minWidth: '48px', textAlign: 'right', fontFamily: 'var(--display)' } }, Math.round(it.p * 100) + '%'),
         );
         b.addEventListener('click', () => {
+          if (generating) return;
           api.sfx('click');
           add(it.w, true);
         });
         barsEl.appendChild(b);
       }
     };
+    let generating = false;
     const gen = async () => {
+      if (generating) return;
+      generating = true;
       words = [];
       render();
       for (let i = 0; i < 16; i++) {
@@ -212,6 +216,7 @@ export const nextWord = {
         api.sfx('blip');
         if (w === '.') break;
       }
+      generating = false;
       if (temp <= 0.4) lowGen = true;
       if (temp >= 1.8) highGen = true;
       if (lowGen && highGen) {

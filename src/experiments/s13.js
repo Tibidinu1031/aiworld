@@ -98,7 +98,11 @@ export const biasLab = {
       tested = true;
       missions.check('test');
       const { res } = evaluate();
-      if (res.small < 0.8) say.set(T({ en: `Look! The door is right for most animals, but only ${Math.round(res.small * 100)}% right for small dogs. They get locked out! Why? There were no small dogs in the training data.`, ro: `Uite! Ușa are dreptate pentru majoritatea animalelor, dar doar ${Math.round(res.small * 100)}% pentru câinii mici. Rămân pe dinafară! De ce? În datele de antrenare nu era niciun câine mic.` }));
+      const smallInTrain = train.filter((p) => p.g === 'small').length;
+      if (res.small < 0.8) {
+        if (!smallInTrain) say.set(T({ en: `Look! The door is right for most animals, but only ${Math.round(res.small * 100)}% right for small dogs. They get locked out! Why? There were no small dogs in the training data.`, ro: `Uite! Ușa are dreptate pentru majoritatea animalelor, dar doar ${Math.round(res.small * 100)}% pentru câinii mici. Rămân pe dinafară! De ce? În datele de antrenare nu era niciun câine mic.` }));
+        else say.set(T({ en: `Small dogs: ${Math.round(res.small * 100)}%. Better, but there are still too few small dogs in the training data. Add more!`, ro: `Câinii mici: ${Math.round(res.small * 100)}%. Mai bine, dar încă sunt prea puțini câini mici în datele de antrenare. Adaugă mai mulți!` }));
+      }
       renderGroups();
       draw();
       showWhy();

@@ -102,8 +102,9 @@ export const lineFit = {
         stop();
         slope = Math.max(-1, Math.min(6, slope || 0));
         icpt = Math.max(-80, Math.min(80, icpt || 0));
-        if (missions.check('wild') || true) say.set(T({ en: 'Whoa! The steps were so big that the AI jumped over the valley again and again, and the error exploded. That is a learning rate that is too high!', ro: 'Uau! Pașii au fost atât de mari încât IA a sărit peste vale iar și iar, iar eroarea a explodat. Asta e o rată de învățare prea mare!' }));
-      } else if (history.length > 3 && Math.abs(history[history.length - 2] - e) < 0.01) {
+        missions.check('wild');
+        say.set(T({ en: 'Whoa! The steps were so big that the AI jumped over the valley again and again, and the error exploded. That is a learning rate that is too high!', ro: 'Uau! Pașii au fost atât de mari încât IA a sărit peste vale iar și iar, iar eroarea a explodat. Asta e o rată de învățare prea mare!' }));
+      } else if (history.length > 3 && e <= history[history.length - 2] && history[history.length - 2] - e < 0.01) {
         stop();
         missions.check('train');
         say.set(T({ en: `Done in ${history.length - 1} steps! The error stopped shrinking: we reached the bottom of the valley.`, ro: `Gata în ${history.length - 1} pași! Eroarea nu mai scade: am ajuns pe fundul văii.` }), 'happy');
@@ -270,7 +271,7 @@ export const hillDescent = {
       steps++;
       trail.push(x);
       const after = f(x);
-      if (!bumpyMode) {
+      if (!bumpyMode && !momentum) {
         if ((old - 1) * (x - 1) < 0 && Math.abs(x - 1) > 0.15) {
           if (missions.check('over')) say.set(T({ en: 'Whoosh! The step was bigger than the valley, so I landed on the other side.', ro: 'Fiuu! Pasul a fost mai mare decât valea, așa că am aterizat pe partea cealaltă.' }));
         }
@@ -280,7 +281,7 @@ export const hillDescent = {
         if (after < 0.55 && steps <= 10) {
           if (missions.check('fast')) say.set(T({ en: `Bottom reached in ${steps} steps! A good step size makes training fast.`, ro: `Am ajuns jos în ${steps} pași! O mărime bună a pasului face antrenarea rapidă.` }), 'happy');
         }
-      } else {
+      } else if (bumpyMode) {
         const settled = Math.abs(x - old) < 0.01;
         if (settled && x < -1 && !momentum) {
           if (missions.check('stuck')) say.set(T({ en: 'I\'m stuck in the small valley! Downhill steps can\'t climb out. This is a local minimum.', ro: 'Am rămas blocat în valea mică! Pașii la vale nu pot urca afară. Acesta e un minim local.' }));
@@ -308,13 +309,13 @@ export const hillDescent = {
       const g = cb.g;
       g.fillStyle = '#fff';
       g.fillRect(0, 0, W, H);
-      frame = plotFrame(g, { x: 50, y: 20, w: W - 70, h: H - 70, xmin: XMIN, xmax: XMAX, ymin: 0, ymax: bumpyMode ? 7 : 9, grid: false, xlabel: T({ en: 'knob setting', ro: 'poziția butonului' }), ylabel: T({ en: 'error', ro: 'eroare' }) });
+      frame = plotFrame(g, { x: 50, y: 20, w: W - 70, h: H - 70, xmin: XMIN, xmax: XMAX, ymin: 0, ymax: 9, grid: false, xlabel: T({ en: 'knob setting', ro: 'poziția butonului' }), ylabel: T({ en: 'error', ro: 'eroare' }) });
       // Colored landscape.
       for (let i = 0; i < 115; i++) {
         const xx = XMIN + ((XMAX - XMIN) * i) / 115;
         const yy = f(xx);
         const px = frame.X(xx);
-        const py = frame.Y(Math.min(yy, bumpyMode ? 7 : 9));
+        const py = frame.Y(Math.min(yy, 9));
         const t = Math.min(1, yy / (bumpyMode ? 6 : 8));
         g.fillStyle = `rgba(${Math.round(90 + 165 * t)}, ${Math.round(103 + 35 * t)}, ${Math.round(216 - 124 * t)}, 0.25)`;
         g.fillRect(px, py, (W - 70) / 115 + 1, H - 50 - py);

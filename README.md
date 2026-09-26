@@ -52,7 +52,8 @@ The game checks what is drawing the 3D. On computers without a proper graphics d
 | Move | W A S D or arrow keys | joystick: touch anywhere on the left half |
 | Look around | drag with the mouse, wheel to zoom | drag on the right half, pinch with two fingers to zoom |
 | Jump | Space | ⤒ button |
-| Run | Shift | push the joystick all the way |
+| Run (7.2 m/s) | Shift | push the joystick all the way |
+| Nitro on / off (10 m/s) | N (or click 🚀 Nitro, bottom left) | 🚀 button |
 | Talk / use terminals, signs, pads | E (or click the prompt) | E button |
 | Kick a ball | F | ⚽ button |
 | Teleport map | M | 🗺️ button |
@@ -116,6 +117,7 @@ Besides the experiments in each station's window, every island has a **physical 
 The world follows real physics, and signs around the hub explain it:
 
 - Gravity is 9.81 m/s². Bip's jump (5.1 m/s) reaches about 1.3 m, just as v²/2g predicts.
+- Bip walks at 4.2 m/s and runs at 7.2 m/s. With nitro, boosters fold out of Bip's back and the top speed becomes 10 m/s (36 km/h, as fast as the world's fastest sprinters). Bip still accelerates and brakes at a real 22 m/s², so at full speed it needs about 2 m to stop.
 - Balls have real masses and sizes (beach ball, soccer ball, basketball, bowling ball). A kick gives every ball the same impulse, so lighter balls fly faster (Newton's second law, Δv = J / m).
 - Air drag is quadratic (½ρC<sub>d</sub>Av²), so big light balls slow down quickly.
 - Buoyancy uses Archimedes' principle for both water and air: the beach ball and soccer ball float at the right depth, and the bowling ball sinks to the seabed.

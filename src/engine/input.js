@@ -65,7 +65,7 @@ export class Input {
   }
 
   // Touch controls: a floating joystick on the left half, camera drag on the right half,
-  // two fingers on the right half pinch to zoom, and big buttons for jump / use / kick / map.
+  // two fingers on the right half pinch to zoom, and big buttons for jump / use / kick / map / nitro.
   attachTouch(root, handlers) {
     this.touchMode = true;
     const stick = root.querySelector('.joy');
@@ -177,16 +177,20 @@ export class Input {
       b.addEventListener('pointercancel', release);
       b.addEventListener('contextmenu', (e) => e.preventDefault());
     }
-    const mapBtn = root.querySelector('.tb-map');
-    if (mapBtn && handlers && handlers.map) {
-      mapBtn.addEventListener('pointerdown', (e) => {
+    // Tap buttons (act once on release): map, nitro on/off.
+    for (const [sel, name] of [['.tb-map', 'map'], ['.tb-nitro', 'nitro']]) {
+      const b = root.querySelector(sel);
+      if (!b || !handlers || !handlers[name]) continue;
+      b.addEventListener('pointerdown', (e) => {
         e.preventDefault();
-        mapBtn.classList.add('pressed');
+        b.classList.add('pressed');
       });
-      mapBtn.addEventListener('pointerup', () => {
-        mapBtn.classList.remove('pressed');
-        handlers.map();
+      b.addEventListener('pointerup', () => {
+        b.classList.remove('pressed');
+        handlers[name]();
       });
+      b.addEventListener('pointercancel', () => b.classList.remove('pressed'));
+      b.addEventListener('contextmenu', (e) => e.preventDefault());
     }
   }
 

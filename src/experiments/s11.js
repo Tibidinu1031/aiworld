@@ -307,6 +307,7 @@ export const gridWorld = {
     let watching = null;
     let fastLeft = 0;
     let lowGammaTrained = 0;
+    let lowGammaFresh = false; // brain reset while γ is low, so old far-sighted values are gone
     const best = shortestPath();
     const missions = api.missions([
       { id: 'watch', t: { en: 'Watch one episode: the robot starts clueless', ro: 'Privește un episod: robotul pornește fără nicio idee' } },
@@ -371,12 +372,12 @@ export const gridWorld = {
       episodes++;
       rewards.push(s.total);
       if (rewards.length > 120) rewards.shift();
-      if (gamma <= 0.3) lowGammaTrained++;
+      if (gamma <= 0.3 && lowGammaFresh) lowGammaTrained++;
       const path = greedyPath();
       if (path && path.length - 1 === best) {
         if (missions.check('learn')) say.set(T({ en: `Learned! The robot now takes the shortest safe path: ${best} steps. Follow the arrows: each one points to the best action in that square.`, ro: `A învățat! Robotul ia acum cel mai scurt drum sigur: ${best} pași. Urmează săgețile: fiecare arată cea mai bună acțiune din căsuța aceea.` }), 'happy');
       }
-      if (gamma <= 0.3 && lowGammaTrained >= 40) {
+      if (gamma <= 0.3 && lowGammaFresh && lowGammaTrained >= 40) {
         if (missions.check('gamma')) say.set(T({ en: 'With a low γ the robot is short-sighted: the battery\'s value fades quickly, so squares far away learn almost nothing.', ro: 'Cu γ mic, robotul vede doar pe termen scurt: valoarea bateriei se stinge repede, așa că în căsuțele îndepărtate nu învață aproape nimic.' }));
       }
     };
@@ -396,6 +397,7 @@ export const gridWorld = {
       watching = null;
       fastLeft = 0;
       lowGammaTrained = 0;
+      lowGammaFresh = gamma <= 0.3;
       pos = START.slice();
       draw();
     }, 'small');
@@ -403,6 +405,7 @@ export const gridWorld = {
     const sGamma = slider({ label: T({ en: 'Discount (γ)', ro: 'Factor de reducere (γ)' }), min: 0.1, max: 0.99, step: 0.01, value: gamma, fmt: (v) => v.toFixed(2), onInput: (v) => {
       gamma = v;
       lowGammaTrained = 0;
+      lowGammaFresh = v <= 0.3 && (lowGammaFresh || episodes === 0);
     } });
     if (api.level < 3) sGamma.el.hidden = true;
 

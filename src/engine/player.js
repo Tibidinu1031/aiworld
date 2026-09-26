@@ -7,6 +7,7 @@ import { sfx } from '../audio.js';
 // acceleration limited like a real wheeled robot.
 const WALK = 4.2; // m/s
 const RUN = 7.2; // m/s
+const NITRO = 10; // m/s (36 km/h), as fast as the world's fastest sprinters
 const JUMP_V = 5.1; // m/s  -> apex = v^2 / 2g = 1.33 m
 const GROUND_ACCEL = 22; // m/s^2
 const AIR_ACCEL = 5;
@@ -31,6 +32,7 @@ export class Player {
     this.onSplash = null;
     this.frozen = false;
     this.stepTimer = 0;
+    this.nitro = false;
   }
 
   teleport(x, y, z, yaw) {
@@ -52,7 +54,7 @@ export class Player {
     let dz = fz * ax.y + rz * ax.x;
     const mag = Math.hypot(dx, dz);
     const running = input.down('ShiftLeft') || input.down('ShiftRight') || input.joyRun;
-    let speed = (running ? RUN : WALK) * Math.min(1, mag);
+    let speed = (this.nitro ? NITRO : running ? RUN : WALK) * Math.min(1, mag);
     if (this.inWater) speed *= 0.45;
     if (mag > 0.001) {
       dx /= mag;

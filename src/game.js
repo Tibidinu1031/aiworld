@@ -81,6 +81,7 @@ export class Game {
       lang: () => this.setLang(state.lang === 'en' ? 'ro' : 'en'),
       menu: () => this.mode === 'play' && this.openMenuPanel(),
       use: () => this.use(),
+      nitro: () => this.mode === 'play' && this.toggleNitro(),
     });
     this.fadeEl = document.createElement('div');
     this.fadeEl.className = 'fade';
@@ -103,7 +104,10 @@ export class Game {
     if (isTouch) {
       this.hud.touch.hidden = false;
       this.hud.layer.classList.add('touch-on');
-      this.input.attachTouch(this.hud.touch, { map: () => this.mode === 'play' && this.openMapPanel() });
+      this.input.attachTouch(this.hud.touch, {
+        map: () => this.mode === 'play' && this.openMapPanel(),
+        nitro: () => this.mode === 'play' && this.toggleNitro(),
+      });
     }
     this.touch = isTouch;
     // Phones and tablets have very dense screens; start at a sensible resolution and shadow size.
@@ -457,6 +461,18 @@ export class Game {
     this.near.action();
   }
 
+  // Nitro: Bip's top speed goes from 4.2 m/s (walk) or 7.2 m/s (run) to 10 m/s.
+  toggleNitro(on = !this.player.nitro) {
+    this.player.nitro = on;
+    this.robot.setNitro(on);
+    this.hud.setNitro(on);
+    sfx(on ? 'nitro' : 'nitroOff');
+    if (on && !this.nitroTipShown) {
+      this.nitroTipShown = true;
+      this.hud.toast('🚀 ' + t('nitroOn'), t(this.touch ? 'nitroFactTouch' : 'nitroFact'), 7000);
+    } else this.hud.toast(on ? '🚀 ' + t('nitroOn') : '🐢 ' + t('nitroOff'), null, 1600);
+  }
+
   kick() {
     const p = this.player;
     const fx = Math.sin(p.yaw);
@@ -523,6 +539,7 @@ export class Game {
       if (this.mode === 'play') {
         if (this.input.pressed('KeyE')) this.use();
         if (this.input.pressed('KeyF')) this.kick();
+        if (this.input.pressed('KeyN')) this.toggleNitro();
         if (this.input.pressed('KeyM')) this.openMapPanel();
         if (this.input.pressed('Escape')) this.openMenuPanel();
       }
@@ -540,6 +557,7 @@ export class Game {
       if (n === 8) this.physAcc = 0;
       for (const b of this.physics.balls) b.syncMesh(h * n);
       this.updateCamera(dt);
+      if (p.nitro && this.render3D) this.nitroSparks(dt, res.speed || 0);
       if (this.mode === 'play') {
         this.updateInteractions();
         this.checkCrystals();
@@ -567,6 +585,17 @@ export class Game {
       if (!this.contextLost) this.renderer.render(this.scene, this.camera);
     }
     this.input.endFrame();
+  }
+
+  // A few sparks from the boosters while Bip zooms along.
+  nitroSparks(dt, speed) {
+    this.sparkTimer = (this.sparkTimer || 0) - dt;
+    if (speed < 3 || this.sparkTimer > 0) return;
+    this.sparkTimer = 0.05;
+    const p = this.player;
+    const bx = p.pos.x - Math.sin(p.yaw) * 0.6;
+    const bz = p.pos.z - Math.cos(p.yaw) * 0.6;
+    this.world.particles.emit({ x: bx, y: p.pos.y + 0.55, z: bz, count: 2, colors: ['#ff9a2e', '#ffd23f', '#fff1b8'], up: 0.8, spread: 0.4, size: 0.12, life: 0.35 });
   }
 
   updateCamera(dt) {
@@ -601,6 +630,12 @@ export class Game {
     } else this.camPos.lerp(want, 1 - Math.exp(-dt * 10));
     this.camera.position.copy(this.camPos);
     this.camera.lookAt(this.camTarget);
+    // Widen the view a little above running speed, for the feeling of zooming along.
+    const fov = 60 + Math.max(0, Math.hypot(p.vel.x, p.vel.z) - 7.2) * 2.5;
+    if (Math.abs(this.camera.fov - fov) > 0.05) {
+      this.camera.fov += (fov - this.camera.fov) * Math.min(1, dt * 4);
+      this.camera.updateProjectionMatrix();
+    }
   }
 
   updateInteractions() {

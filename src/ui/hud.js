@@ -45,7 +45,10 @@ export function createHud(root, handlers) {
   const height = h('b');
   const speedLab = h('span');
   const heightLab = h('span');
-  const readout = h('div', { class: 'readout' }, h('div', null, speedLab, ' ', speed), h('div', null, heightLab, ' ', height));
+  const nitroLab = h('span');
+  const nitroBtn = h('button', { class: 'nitro-btn interactive', 'aria-pressed': 'false' }, '🚀 ', nitroLab, h('kbd', null, 'N'));
+  nitroBtn.addEventListener('click', () => handlers.nitro());
+  const readout = h('div', { class: 'readout' }, h('div', null, speedLab, ' ', speed), h('div', null, heightLab, ' ', height), nitroBtn);
   layer.appendChild(readout);
 
   const keys = h('div', { class: 'keys' });
@@ -61,6 +64,7 @@ export function createHud(root, handlers) {
     h(
       'div',
       { class: 'tbtns' },
+      h('button', { class: 'tb-nitro', 'aria-label': t('ctrlNitro'), 'aria-pressed': 'false' }, '🚀'),
       h('button', { class: 'tb-kick', 'aria-label': t('ctrlKick') }, '⚽'),
       h('button', { class: 'tb-use', 'aria-label': t('ctrlUse') }, 'E'),
       h('button', { class: 'tb-map', 'aria-label': t('ctrlMap') }, '🗺️'),
@@ -76,6 +80,7 @@ export function createHud(root, handlers) {
       ['🖱️', t('dragMouse')],
       ['Space', t('ctrlJump')],
       ['Shift', t('ctrlRun')],
+      ['N', t('ctrlNitro')],
       ['E', t('ctrlUse')],
       ['F', t('ctrlKick')],
       ['M', t('ctrlMap')],
@@ -119,6 +124,12 @@ export function createHud(root, handlers) {
       promptText.textContent = label;
       prompt.hidden = false;
     },
+    setNitro(on) {
+      for (const b of [nitroBtn, touch.querySelector('.tb-nitro')]) {
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
+      }
+    },
     setReadout(v, y) {
       speed.textContent = v.toFixed(1) + ' m/s';
       height.textContent = y.toFixed(1) + ' m';
@@ -138,6 +149,9 @@ export function createHud(root, handlers) {
       menuBtn.title = t('menu');
       speedLab.textContent = t('speed');
       heightLab.textContent = t('height');
+      nitroLab.textContent = t('nitro');
+      nitroBtn.title = t('ctrlNitro');
+      touch.querySelector('.tb-nitro').setAttribute('aria-label', t('ctrlNitro'));
       renderKeys();
     },
   };

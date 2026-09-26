@@ -133,6 +133,11 @@ const SFX = {
     tone({ f: 200, f2: 500, dur: 0.2, type: 'sine', vol: 0.15 });
   },
   step: () => tone({ f: 1200, dur: 0.02, type: 'sine', vol: 0.02 }),
+  nitro: () => {
+    noise({ dur: 0.55, vol: 0.3, filter: 400, sweep: 3200, type: 'bandpass', q: 1.5 });
+    tone({ f: 140, f2: 420, dur: 0.35, type: 'sawtooth', vol: 0.05 });
+  },
+  nitroOff: () => tone({ f: 420, f2: 160, dur: 0.25, type: 'triangle', vol: 0.12 }),
 };
 
 export function sfx(name) {
