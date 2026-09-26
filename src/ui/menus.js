@@ -212,6 +212,8 @@ export function openMenu(game) {
         save();
         game.applyQuality();
       }), t('graphicsNote')),
+      // The browser draws 3D without the graphics card: tell the grown-ups how to switch it on.
+      game.gpu.software && /Windows/.test(navigator.userAgent) ? h('div', { class: 'gpu-tip' }, '💡 ', t('gpuTip')) : null,
     );
     // Progress overview.
     const grid = h('div', { class: 'progress-grid' });

@@ -41,9 +41,21 @@ package.json      scripts: npm run dev / npm run build
 vite.config.js    builds src/ into the root index.html
 ```
 
-## Slow or blank 3D?
+## Slow, blurry or blank 3D?
 
-The game checks what is drawing the 3D. On computers without a proper graphics driver (Windows then uses the "Microsoft Basic Render Driver", which draws in software), it switches to **Fast** graphics automatically and lowers the resolution while frames are slow. Updating the graphics driver (Intel, AMD or NVIDIA) makes a huge difference. A nearly full hard drive can also make browsers misbehave.
+The game checks what is drawing the 3D. When the browser draws it without the graphics card (Windows then reports the "Microsoft Basic Render Driver", which draws in software on the processor), the game switches to **Fast** graphics: half resolution, no shadows. It still works, but it looks blurry.
+
+**Older laptops (for example Intel HD Graphics 2000/3000):** browsers block these graphics cards for WebGL 2, so they fall back to software drawing even when the driver is installed. The game also runs on WebGL 1, which these cards can do:
+
+1. In Edge open `edge://flags` (in Chrome: `chrome://flags`).
+2. Search for **ANGLE** and set **Choose ANGLE graphics backend** to **D3D11**.
+3. Restart the browser.
+
+The game then uses the graphics card and picks **Pretty** graphics by itself. On an HP ProBook 6460b (Intel HD Graphics 3000) this went from half resolution without shadows to about 85% resolution with shadows and smooth edges, at a similar speed. To undo it, set the option back to **Default**. (With D3D11 the browser offers only WebGL 1, so a few other websites that need WebGL 2 may not work.)
+
+On other computers, updating the graphics driver (Intel, AMD or NVIDIA) makes a huge difference. A nearly full hard drive can also make browsers misbehave.
+
+While playing, the game adjusts the resolution to keep the frame rate playable, and tries a sharper picture again when there is room.
 
 ## Controls
 
@@ -153,4 +165,4 @@ Every text field is an `{ en, ro }` pair.
 
 ## Tech
 
-Three.js for 3D, a custom physics engine, plain JavaScript and CSS for the interface, Vite plus `vite-plugin-singlefile` for the one-file build. No images, sounds or models are downloaded: everything is generated in code.
+Three.js r162 for 3D (the last version that still supports WebGL 1, so the game can use old graphics cards; keep it on 0.162.x), a custom physics engine, plain JavaScript and CSS for the interface, Vite plus `vite-plugin-singlefile` for the one-file build. No images, sounds or models are downloaded: everything is generated in code.

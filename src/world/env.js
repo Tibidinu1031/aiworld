@@ -39,7 +39,9 @@ export function createEnvironment(scene) {
   });
   const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 32, 16), skyMat);
   sky.frustumCulled = false;
-  sky.renderOrder = -10;
+  // Drawn after the solid objects: it sits at the far plane, so the depth test skips every
+  // pixel that is already covered and only the visible sky costs anything.
+  sky.renderOrder = 1000;
   scene.add(sky);
 
   // Lights.
@@ -83,9 +85,7 @@ export function createEnvironment(scene) {
     seabed,
     // Fast mode skips the full-screen layers that cost the most on weak graphics.
     setLow(low) {
-      sky.visible = !low;
       seabed.visible = !low;
-      scene.background.set(low ? '#a9dbf5' : FOG_COLOR);
       water.material.transparent = !low;
       water.material.needsUpdate = true;
     },

@@ -39,8 +39,12 @@ export class Game {
     this.canvas = document.getElementById('scene');
     this.ui = document.getElementById('ui');
     this.gpu = probeGpu();
-    if (this.gpu.software && !state.qualityChosen) state.quality = 'low';
+    // Without a graphics card, start in Fast mode. When the card works (for example after
+    // switching it on in the browser settings), go back to Pretty, unless the player chose.
+    if (!state.qualityChosen) state.quality = this.gpu.software ? 'low' : 'high';
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: state.quality !== 'low', powerPreference: 'high-performance' });
+    // Old graphics cards (like Intel HD 2000/3000) only offer WebGL 1.
+    this.webgl2 = this.renderer.capabilities.isWebGL2;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
@@ -49,6 +53,8 @@ export class Game {
     this.pixelScale = 1;
     this.frameMs = 16;
     this.govTimer = 0;
+    this.slowScale = Infinity; // resolution scale that was last too slow
+    this.slowAt = -1e9;
     this.contextLost = false;
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1500);
@@ -110,8 +116,6 @@ export class Game {
       });
     }
     this.touch = isTouch;
-    // Phones and tablets have very dense screens; start at a sensible resolution and shadow size.
-    if (isTouch) this.world.env.sun.shadow.mapSize.set(1024, 1024);
 
     window.addEventListener('resize', () => this.resize());
     this.watchContext();
@@ -151,6 +155,16 @@ export class Game {
     const cap = this.touch ? 1.3 : 1.75;
     this.basePixelRatio = high ? Math.min(dpr, cap) : this.gpu.software ? 0.5 : Math.min(1, dpr * 0.75);
     this.renderer.setPixelRatio(this.basePixelRatio * this.pixelScale);
+    // Phones and older graphics cards (WebGL 1) get a smaller shadow map.
+    const shadowSize = this.touch || !this.webgl2 ? 1024 : 2048;
+    const sun = this.world.env.sun;
+    if (sun.shadow.mapSize.x !== shadowSize) {
+      sun.shadow.mapSize.set(shadowSize, shadowSize);
+      if (sun.shadow.map) {
+        sun.shadow.map.dispose();
+        sun.shadow.map = null;
+      }
+    }
     if (this.renderer.shadowMap.enabled !== high) {
       this.renderer.shadowMap.enabled = high;
       this.scene.traverse((o) => {
@@ -162,18 +176,29 @@ export class Game {
   }
 
   // Keep the game playable on slow computers: lower the resolution when frames are slow,
-  // raise it again when there is room. Runs only while the page is visible.
+  // raise it again when there is room. A steady 30 fps also tries a sharper picture,
+  // but not a resolution that was too slow in the last minute. Runs only while visible.
   governFrameRate(rawMs) {
-    if (document.visibilityState !== 'visible' || rawMs > 1000) return;
+    // The title flyover shows the whole island at once; judge the speed in play only.
+    if (this.mode === 'title' || document.visibilityState !== 'visible' || rawMs > 1000) return;
     this.frameMs += (rawMs - this.frameMs) * 0.1;
     this.govTimer += rawMs / 1000;
     if (this.govTimer < 1.5) return;
     this.govTimer = 0;
     // Never go below 0.4 of a CSS pixel: blurrier than that is worse than a slower frame.
-    const minScale = Math.min(1, 0.4 / this.basePixelRatio);
+    // Software drawing is limited by the number of objects more than by pixels, so it stops at 0.5.
+    const minScale = Math.min(1, (this.gpu.software ? 0.5 : 0.4) / this.basePixelRatio);
+    const now = performance.now() / 1000;
     let next = this.pixelScale;
-    if (this.frameMs > 45 && this.pixelScale > minScale) next = Math.max(minScale, this.pixelScale * 0.85);
-    else if (this.frameMs < 20 && this.pixelScale < 1) next = Math.min(1, this.pixelScale * 1.15);
+    if (this.frameMs > 45 && this.pixelScale > minScale) {
+      next = Math.max(minScale, this.pixelScale * 0.85);
+      this.slowScale = this.pixelScale;
+      this.slowAt = now;
+    } else if (this.pixelScale < 1) {
+      const up = Math.min(1, this.pixelScale * 1.15);
+      const steady = this.frameMs < 36 && (up < this.slowScale * 0.98 || now - this.slowAt > 60);
+      if (this.frameMs < 20 || steady) next = up;
+    }
     if (next !== this.pixelScale) {
       this.pixelScale = next;
       this.renderer.setPixelRatio(this.basePixelRatio * this.pixelScale);
@@ -283,7 +308,11 @@ export class Game {
     const res = await titleScreen(this);
     unlockAudio();
     this.hud.show(true);
-    if (this.gpu.software && !state.qualityChosen) this.hud.toast('🐢 ' + t('gpuSlow'), null, 10000);
+    // Start judging the frame rate fresh, after a short settling time.
+    this.frameMs = 30;
+    this.govTimer = -2;
+    this.slowScale = Infinity;
+    if (this.gpu.software && !state.qualityChosen) this.hud.toast('🐢 ' + t(/Windows/.test(navigator.userAgent) ? 'gpuSlow' : 'gpuSlowOther'), null, 10000);
     if (this.touch && window.innerHeight > window.innerWidth) this.hud.toast('📱 ' + t('rotateHint'), null, 7000);
     this.updateGoal();
     if (res.fresh || !state.introDone) {
